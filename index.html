@@ -1,0 +1,579 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Bonjour - Jeu A1</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #e5f5f2, #fce5ef, #fff1d6);
+  color: #30304f;
+}
+
+.container {
+  max-width: 850px;
+  margin: 20px auto;
+  padding: 28px;
+  background: white;
+  border-radius: 25px;
+  box-shadow: 0 12px 35px #4442;
+}
+
+header { text-align: center; }
+
+h1 {
+  color: #57469b;
+  font-size: 36px;
+}
+
+.badge {
+  display: inline-block;
+  background: #eeeaff;
+  color: #594ba8;
+  padding: 9px 16px;
+  border-radius: 25px;
+  font-weight: bold;
+}
+
+.progress {
+  height: 10px;
+  background: #eee;
+  border-radius: 20px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  background: #806de0;
+  transition: width .3s;
+}
+
+.wordbank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 20px 0;
+}
+
+.word {
+  background: #fff0d5;
+  padding: 9px 13px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.dialogue {
+  background: #f7f5ff;
+  padding: 18px;
+  border-radius: 18px;
+  margin: 20px 0;
+  line-height: 2;
+}
+
+.speaker {
+  color: #7562ce;
+  font-weight: bold;
+}
+
+.blank {
+  display: inline-block;
+  min-width: 85px;
+  border-bottom: 2px dashed #e56c9d;
+  text-align: center;
+  color: #b43f76;
+  font-weight: bold;
+}
+
+.target {
+  background: #fff1f6;
+  border: 2px dashed #e99ab8;
+  border-radius: 17px;
+  padding: 18px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.target strong {
+  display: block;
+  color: #ad3e70;
+  font-size: 22px;
+  margin-top: 10px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+button {
+  border: none;
+  border-radius: 13px;
+  padding: 13px 17px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.primary {
+  background: #7766dc;
+  color: white;
+}
+
+.secondary {
+  background: #ece9ff;
+  color: #5144a5;
+}
+
+.status {
+  text-align: center;
+  min-height: 50px;
+  padding: 15px;
+  font-weight: bold;
+}
+
+.good { color: #16835f; }
+.bad { color: #b34263; }
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.confetti {
+  position: fixed;
+  top: -15px;
+  width: 10px;
+  height: 15px;
+  animation: fall 2.5s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(110vh) rotate(700deg);
+    opacity: 0;
+  }
+}
+
+@media(max-width:550px) {
+  .container { padding: 17px; }
+  h1 { font-size: 28px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="game">
+
+<header>
+  <span class="badge">FRANÇAIS · NIVEAU A1</span>
+  <h1>Mission Bonjour !</h1>
+  <p>Complète les dialogues et prononce les phrases au microphone.</p>
+</header>
+
+<div>
+  <span class="badge" id="mission"></span>
+  <span class="badge" id="score">⭐ 0 point</span>
+</div>
+
+<div class="progress">
+  <div class="progress-bar" id="progress"></div>
+</div>
+
+<h2 id="title"></h2>
+
+<p>Banque de mots :</p>
+<div class="wordbank" id="wordbank"></div>
+
+<div class="dialogue" id="dialogue"></div>
+
+<div class="target">
+  <span>🎤 PHRASE À PRONONCER</span>
+  <strong id="target"></strong>
+</div>
+
+<div class="buttons">
+  <button class="primary" id="record">🎙️ Enregistrer ma voix</button>
+  <button class="secondary" id="listen">🔊 Écouter</button>
+</div>
+
+<div class="status" id="status">
+  Appuie sur le microphone pour commencer.
+</div>
+
+<div id="heard" style="text-align:center"></div>
+
+<div class="navigation">
+  <button class="secondary" id="previous">← Précédent</button>
+  <span class="badge" id="step"></span>
+  <button class="secondary" id="next">Suivant →</button>
+</div>
+
+</div>
+
+<script>
+
+const exercises = [
+
+{
+title: "Dialogue 1 · Formel",
+
+words: ["Bonjour","Salut","Merci","vous","toi","Au revoir","À plus","Enchanté(e)"],
+
+lines: [
+["A","Bonjour, Monsieur !"],
+["B","Bonjour, Madame !"],
+["A","Comment allez-___ ?"],
+["B","Très bien, merci. Et vous ?"],
+["A","Très bien, ___."],
+["B","Au revoir, Madame !"],
+["A","___, Monsieur !"]
+],
+
+answers: [
+"Bonjour, Monsieur !",
+"Bonjour, Madame !",
+"Comment allez-vous ?",
+"Très bien, merci. Et vous ?",
+"Très bien, merci.",
+"Au revoir, Madame !",
+"Au revoir, Monsieur !"
+]
+},
+
+{
+title: "Dialogue 2 · Familier",
+
+words: ["Bonjour","Salut","Merci","vous","toi","Au revoir","À plus","Enchanté(e)"],
+
+lines: [
+["A","Salut, Julie !"],
+["B","Salut, Paul !"],
+["A","Ça va ?"],
+["B","Oui, ça va, merci. Et ___ ?"],
+["A","Ça va bien, ___ !"],
+["B","À plus !"],
+["A","___ !"]
+],
+
+answers: [
+"Salut, Julie !",
+"Salut, Paul !",
+"Ça va ?",
+"Oui, ça va, merci. Et toi ?",
+"Ça va bien, merci !",
+"À plus !",
+"À plus !"
+]
+},
+
+{
+title: "Dialogue 3 · Formel",
+
+words: ["Bonjour","Salut","Merci","vous","toi","Au revoir","À plus","Enchanté(e)"],
+
+lines: [
+["A","Bonjour, Madame !"],
+["B","Bonjour, Monsieur !"],
+["A","Comment vous appelez-___ ?"],
+["B","Je m’appelle Sophie Martin. Et vous ?"],
+["A","Je m’appelle Paul Bernard."],
+["B","Enchantée !"],
+["A","___ !"]
+],
+
+answers: [
+"Bonjour, Madame !",
+"Bonjour, Monsieur !",
+"Comment vous appelez-vous ?",
+"Je m’appelle Sophie Martin. Et vous ?",
+"Je m’appelle Paul Bernard.",
+"Enchantée !",
+"Enchanté !"
+]
+},
+
+{
+title: "Dialogue 4 · Familier",
+
+words: ["Bonjour","Salut","Merci","vous","toi","Au revoir","À plus","Enchanté(e)"],
+
+lines: [
+["A","Salut, Emma !"],
+["B","Salut, Lucas !"],
+["A","Comment tu t’appelles ?"],
+["B","Je m’appelle Emma. Et ___ ?"],
+["A","Moi, c’est Lucas."],
+["B","Enchantée !"],
+["A","___ !"]
+],
+
+answers: [
+"Salut, Emma !",
+"Salut, Lucas !",
+"Comment tu t’appelles ?",
+"Je m’appelle Emma. Et toi ?",
+"Moi, c’est Lucas.",
+"Enchantée !",
+"Enchanté !"
+]
+},
+
+{
+title: "Dialogue 5 · Formel",
+
+words: ["Bonjour","Salut","Merci","vous","toi","Au revoir","À plus","Enchanté(e)"],
+
+lines: [
+["A","Bonjour, Monsieur ! Vous allez bien ?"],
+["B","Oui, très bien, merci. Et ___ ?"],
+["A","Très bien, merci."],
+["B","Vous habitez à Berlin ?"],
+["A","Non, j’habite à Paris."],
+["B","Ah, d’accord !"],
+["A","___, Monsieur !"],
+["B","Au revoir !"]
+],
+
+answers: [
+"Bonjour, Monsieur ! Vous allez bien ?",
+"Oui, très bien, merci. Et vous ?",
+"Très bien, merci.",
+"Vous habitez à Berlin ?",
+"Non, j’habite à Paris.",
+"Ah, d’accord !",
+"Au revoir, Monsieur !",
+"Au revoir !"
+]
+}
+
+];
+
+let exercise = 0;
+let step = 0;
+let score = 0;
+let recognition = null;
+let listening = false;
+
+const $ = id => document.getElementById(id);
+
+function normalize(text) {
+  return text.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’']/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function render() {
+
+  const e = exercises[exercise];
+
+  $("mission").textContent =
+    `Dialogue ${exercise+1} / ${exercises.length}`;
+
+  $("score").textContent = `⭐ ${score} points`;
+
+  $("title").textContent = e.title;
+
+  $("wordbank").innerHTML =
+    e.words.map(w => `<span class="word">${w}</span>`).join("");
+
+  $("dialogue").innerHTML =
+    e.lines.map(line => {
+      const text = line[1].replace(
+        "___",
+        '<span class="blank">………</span>'
+      );
+
+      return `<div><span class="speaker">${line[0]} :</span> ${text}</div>`;
+    }).join("");
+
+  $("target").textContent = e.answers[step];
+
+  $("step").textContent =
+    `Réplique ${step+1} / ${e.answers.length}`;
+
+  $("progress").style.width =
+    ((exercise + step/e.answers.length) / exercises.length * 100) + "%";
+
+  $("status").className = "status";
+  $("status").textContent = "Appuie sur le microphone pour parler.";
+  $("heard").textContent = "";
+
+  $("previous").disabled = exercise === 0 && step === 0;
+
+  $("next").disabled =
+    exercise === exercises.length-1 &&
+    step === e.answers.length-1;
+}
+
+function celebrate() {
+
+  const colors = ["#ff6b9a","#7869e9","#4cc9a6","#ffc857"];
+
+  for(let i=0;i<55;i++) {
+
+    const piece = document.createElement("i");
+
+    piece.className = "confetti";
+    piece.style.left = Math.random()*100 + "vw";
+    piece.style.background = colors[i%colors.length];
+
+    document.body.appendChild(piece);
+
+    setTimeout(() => piece.remove(),3000);
+  }
+
+  const cheer = new SpeechSynthesisUtterance("Ouiiii ! Bravo !");
+  cheer.lang = "fr-FR";
+  speechSynthesis.speak(cheer);
+}
+
+function advance(direction) {
+
+  if(listening && recognition) recognition.stop();
+
+  step += direction;
+
+  if(step < 0) {
+    if(exercise > 0) {
+      exercise--;
+      step = exercises[exercise].answers.length-1;
+    } else step = 0;
+  }
+
+  if(step >= exercises[exercise].answers.length) {
+    if(exercise < exercises.length-1) {
+      exercise++;
+      step = 0;
+    } else {
+      step = exercises[exercise].answers.length-1;
+    }
+  }
+
+  render();
+}
+
+$("previous").onclick = () => advance(-1);
+$("next").onclick = () => advance(1);
+
+$("listen").onclick = () => {
+  speechSynthesis.cancel();
+
+  const utterance =
+    new SpeechSynthesisUtterance(exercises[exercise].answers[step]);
+
+  utterance.lang = "fr-FR";
+  utterance.rate = 0.9;
+
+  speechSynthesis.speak(utterance);
+};
+
+$("record").onclick = () => {
+
+  const SpeechAPI =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if(!SpeechAPI) {
+    $("status").className = "status bad";
+    $("status").textContent =
+      "La reconnaissance vocale n'est pas disponible. Essaie Chrome ou Edge.";
+    return;
+  }
+
+  if(listening) {
+    recognition.stop();
+    return;
+  }
+
+  recognition = new SpeechAPI();
+  recognition.lang = "fr-FR";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
+
+  listening = true;
+
+  $("record").textContent = "■ Arrêter";
+  $("status").textContent = "Je t'écoute… Parle maintenant !";
+
+  recognition.onresult = event => {
+
+    const alternatives = Array.from(event.results[0])
+      .map(result => result.transcript);
+
+    $("heard").textContent =
+      "J'ai entendu : " + alternatives[0];
+
+    const expected = normalize(exercises[exercise].answers[step]);
+
+    const correct = alternatives.some(text => {
+      const spoken = normalize(text);
+
+      return spoken === expected ||
+        (expected.length > 12 && spoken.includes(expected));
+    });
+
+    if(correct) {
+      score++;
+      $("score").textContent = `⭐ ${score} points`;
+
+      $("status").className = "status good";
+      $("status").textContent = "OUIIII ! Excellent ! Bravo !";
+
+      celebrate();
+
+    } else {
+
+      $("status").className = "status bad";
+      $("status").textContent =
+        "Pas encore ! Essaie une nouvelle fois.";
+    }
+  };
+
+  recognition.onerror = event => {
+
+    $("status").className = "status bad";
+
+    $("status").textContent =
+      event.error === "not-allowed"
+      ? "Autorise l'accès au microphone."
+      : "Je n'ai pas entendu. Vérifie ton micro et réessaie.";
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    $("record").textContent = "🎙️ Enregistrer ma voix";
+  };
+
+  try {
+    recognition.start();
+  } catch(error) {
+    listening = false;
+    $("record").textContent = "🎙️ Enregistrer ma voix";
+    $("status").textContent = "Impossible de démarrer le microphone.";
+  }
+};
+
+render();
+
+</script>
+</body>
+</html>
